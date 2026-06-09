@@ -2,10 +2,10 @@
 entries. All quantity-changing operations go through here, never by writing
 LedgerEntry rows directly."""
 
-from datetime import date
+from datetime import date, datetime, timezone
 
 from pharmacy import ledger
-from pharmacy.models import Lot
+from pharmacy.models import Count, Lot
 
 
 class BusinessError(Exception):
@@ -75,3 +75,32 @@ def dispose(session, *, user_id, lot_id, quantity, witness_user_id,
         quantity_delta=-ledger.norm_qty(quantity), reason=reason,
         witness_user_id=witness_user_id, timestamp=timestamp,
     )
+
+
+def reconcile(session, *, user_id, lot_id, counted_qty, post_adjustment=False,
+              reason=None, timestamp=None):
+    """Record a physical count against expected on-hand. Optionally post an
+    `adjust` ledger entry to correct the difference (requires a reason)."""
+    if timestamp is None:
+        timestamp = datetime.now(timezone.utc)
+    expected = ledger.on_hand(session, lot_id)
+    counted = ledger.norm_qty(counted_qty)
+    discrepancy = counted - expected
+
+    adjust_entry = None
+    if post_adjustment and discrepancy != 0:
+        if not (reason or "").strip():
+            raise BusinessError("Posting an adjustment requires a reason.")
+        adjust_entry = ledger.append_entry(
+            session, user_id=user_id, lot_id=lot_id, type="adjust",
+            quantity_delta=discrepancy, reason=reason, timestamp=timestamp,
+        )
+
+    count = Count(
+        timestamp=timestamp, lot_id=lot_id, user_id=user_id,
+        counted_qty=counted, expected_qty=expected, discrepancy=discrepancy,
+        adjust_entry_id=adjust_entry.id if adjust_entry else None,
+    )
+    session.add(count)
+    session.flush()
+    return count

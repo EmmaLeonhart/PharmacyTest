@@ -74,3 +74,36 @@ def test_dispose_witness_must_differ_from_operator(session, actors, drug, ts):
         inventory.dispose(session, user_id=op.id, lot_id=r.lot_id,
                           quantity=2, witness_user_id=op.id,
                           reason="expired", timestamp=ts)
+
+
+def test_reconcile_records_count_and_discrepancy(session, actors, drug, ts):
+    op, _ = actors
+    r = inventory.receive(session, user_id=op.id, drug_id=drug.id,
+                          lot_number="L1", quantity=10, timestamp=ts)
+    count = inventory.reconcile(session, user_id=op.id, lot_id=r.lot_id,
+                                counted_qty=9, timestamp=ts)
+    assert count.expected_qty == Decimal("10.000")
+    assert count.counted_qty == Decimal("9.000")
+    assert count.discrepancy == Decimal("-1.000")
+    assert ledger.on_hand(session, r.lot_id) == Decimal("10.000")
+
+
+def test_reconcile_with_adjust_corrects_on_hand(session, actors, drug, ts):
+    op, _ = actors
+    r = inventory.receive(session, user_id=op.id, drug_id=drug.id,
+                          lot_number="L1", quantity=10, timestamp=ts)
+    count = inventory.reconcile(session, user_id=op.id, lot_id=r.lot_id,
+                                counted_qty=9, post_adjustment=True,
+                                reason="count short", timestamp=ts)
+    assert count.adjust_entry_id is not None
+    assert ledger.on_hand(session, r.lot_id) == Decimal("9.000")
+
+
+def test_reconcile_adjust_requires_reason(session, actors, drug, ts):
+    op, _ = actors
+    r = inventory.receive(session, user_id=op.id, drug_id=drug.id,
+                          lot_number="L1", quantity=10, timestamp=ts)
+    with pytest.raises(inventory.BusinessError):
+        inventory.reconcile(session, user_id=op.id, lot_id=r.lot_id,
+                            counted_qty=9, post_adjustment=True,
+                            reason="", timestamp=ts)
