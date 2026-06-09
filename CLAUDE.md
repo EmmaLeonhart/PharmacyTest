@@ -24,10 +24,31 @@
 - Do not use "honest", "honesty", or "honestly" — and do not swap in "frank", "frankly", "candid", "candidly", or "transparently", which are the same self-congratulatory move in a different coat. When something failed, name the failure: "it didn't work", "I got that wrong", "this failed" — flat, no qualifier. Tagging a report "honest" implies the rest aren't, and couching a failure as honesty asks for credit for the admission, which is worse than the failure itself. Use a precise positive word ("accurate", "plainly", "truly") only when that is genuinely the meaning — never as a halo on a bad outcome.
 
 ## Project Description
-_TODO: Describe what this project is about._
+A **local, multi-user pharmacy controlled-substances tracker** with a regulatory-grade
+audit trail. Pharmacy staff log in from a browser to record receiving, dispensing,
+disposal, and physical counts of drug stock. Every action is an immutable, hash-chained
+ledger entry attributed to a named user; on-hand quantities are *derived* from the ledger,
+not stored as editable numbers — so the audit trail and the inventory are the same thing,
+and tampering with history is detectable. Records and reports are printable.
+
+Full design: `docs/superpowers/specs/2026-06-08-pharmacy-controlled-substance-tracker-design.md`.
 
 ## Architecture and Conventions
-_TODO: Document key decisions, file structure, and patterns as they emerge._
+- **Stack:** Python 3 + Flask (server-rendered Jinja templates), SQLite via SQLAlchemy,
+  Werkzeug password hashing + Flask sessions, pytest, GitHub Actions CI.
+- **Run:** `python -m pharmacy` binds to `127.0.0.1:<port>`; staff use a browser.
+- **Append-only ledger is the source of truth.** Never store mutable on-hand quantities;
+  derive them by summing `LedgerEntry.quantity_delta` per (drug, lot). Never UPDATE or
+  DELETE a `LedgerEntry` — corrections are new `adjust` entries.
+- **Hash-chain every ledger entry** (`entry_hash = SHA-256(prev_hash + canonical fields)`)
+  so history tampering is detectable; a "Verify integrity" action re-walks the chain.
+- **Module boundaries:** `models.py` (schema), `ledger.py` (pure domain: append/derive/
+  verify, no Flask), `inventory.py` (receive/dispense/dispose/reconcile services),
+  `auth.py` (users/sessions/roles), `reports.py` (printable report data), `web/` (Flask
+  routes + Jinja + `print.css`), `__main__.py` (server entry).
+- **Disposals require a witness user; dispensing cannot drive on-hand negative.**
+- Test `ledger.py` and `inventory.py` heaviest (hash chain, on-hand derivation, tamper
+  detection, negative-stock rejection, witness requirement).
 
 ## Cron jobs and scheduled work — LOCAL by default
 
