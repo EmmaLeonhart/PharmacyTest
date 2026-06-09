@@ -35,3 +35,20 @@ def receive(session, *, user_id, drug_id, lot_number, quantity,
         session, user_id=user_id, lot_id=lot.id, type="receive",
         quantity_delta=quantity, reference=reference, timestamp=timestamp,
     )
+
+
+def dispense(session, *, user_id, lot_id, quantity, reference=None,
+             reason=None, timestamp=None):
+    """Record stock going out. Rejected if it would drive on-hand negative."""
+    if quantity <= 0:
+        raise BusinessError("Dispensed quantity must be positive.")
+    available = ledger.on_hand(session, lot_id)
+    if ledger.norm_qty(quantity) > available:
+        raise BusinessError(
+            f"Cannot dispense {quantity}; only {available} on hand."
+        )
+    return ledger.append_entry(
+        session, user_id=user_id, lot_id=lot_id, type="dispense",
+        quantity_delta=-ledger.norm_qty(quantity), reason=reason,
+        reference=reference, timestamp=timestamp,
+    )
