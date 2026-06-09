@@ -47,3 +47,18 @@ def test_check_returns_one_on_tampered_chain(tmp_path):
     session.close()
 
     assert check(url) == 1
+
+
+def test_wsgi_module_exposes_serving_flask_app(monkeypatch):
+    # Build against an in-memory DB and a fixed key so no real files are written.
+    monkeypatch.setenv("PHARMACY_DB", "sqlite://")
+    monkeypatch.setenv("PHARMACY_SECRET_KEY", "test")
+    import importlib
+
+    import pharmacy.wsgi as wsgi
+    importlib.reload(wsgi)  # rebuild under the patched environment
+
+    from flask import Flask
+    assert isinstance(wsgi.app, Flask)
+    resp = wsgi.app.test_client().get("/login")
+    assert resp.status_code == 200

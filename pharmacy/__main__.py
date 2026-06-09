@@ -13,9 +13,8 @@ import os
 import sys
 
 from pharmacy import ledger
-from pharmacy.bootstrap import ensure_admin, load_or_create_secret_key
 from pharmacy.db import init_db, make_session
-from pharmacy.web import create_app
+from pharmacy.web import build_app_from_env
 
 
 def check(db_url):
@@ -41,22 +40,7 @@ def main():
     if len(sys.argv) > 1 and sys.argv[1] == "check":
         sys.exit(check(db_url))
 
-    engine = init_db(db_url)
-
-    admin_user = os.environ.get("PHARMACY_ADMIN_USER", "admin")
-    admin_pw = os.environ.get("PHARMACY_ADMIN_PASSWORD", "admin")
-    session = make_session(engine)
-    if ensure_admin(session, username=admin_user, password=admin_pw):
-        print(f"[first run] Created admin '{admin_user}' with the configured "
-              f"password. Log in and change it.")
-    session.close()
-
-    secret = os.environ.get("PHARMACY_SECRET_KEY")
-    if not secret:
-        key_file = os.environ.get("PHARMACY_SECRET_KEY_FILE",
-                                  "pharmacy_secret.key")
-        secret = load_or_create_secret_key(key_file)
-    app = create_app(engine, secret_key=secret)
+    app = build_app_from_env()
     host = os.environ.get("PHARMACY_HOST", "127.0.0.1")
     port = int(os.environ.get("PHARMACY_PORT", "5000"))
     print(f"Pharmacy tracker running at http://{host}:{port}")

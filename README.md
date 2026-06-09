@@ -45,4 +45,7 @@ intact or `1` if tampering is detected (printing the first bad entry). Schedule
 it with your own cron / Task Scheduler to get a regular tamper check; wiring up
 a notification channel on a non-zero exit is left to the operator.
 
+For production deployment (running behind a WSGI server, backups), see
+[`DEPLOYMENT.md`](DEPLOYMENT.md).
+
 Run the tests with `pytest`.

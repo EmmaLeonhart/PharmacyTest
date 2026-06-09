@@ -14,12 +14,6 @@ Everything below is v2 and beyond.
 
 ---
 
-## Security & access control
-
-- **Deployment hardening (remaining).** The stable secret-key persistence is shipped;
-  still to do: document running behind a production WSGI server, and guidance on
-  `pharmacy.db` backups.
-
 ## Data entry & workflow
 
 - **Supplier / purchase-order tracking.** First-class supplier records and PO references

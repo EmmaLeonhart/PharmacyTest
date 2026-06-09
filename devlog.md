@@ -156,3 +156,19 @@ remain deliberately deferred as product decisions (narrowed the `todo.md` bullet
 to say so). README documents the command. Tests (`tests/test_cli.py`): against a
 temp sqlite **file** DB, `check()` returns 0 on an intact chain and 1 after a
 past entry is mutated directly. Full suite 56 passing (was 54).
+
+## 2026-06-09 — v2-9: WSGI entrypoint + deployment doc
+
+Made the app deployable under a real server (it previously had no importable
+WSGI callable, so the Flask dev server was the only way to run it). Extracted the
+env-driven app construction from `__main__` into a shared
+`web.build_app_from_env()` (engine init + first-run admin + secret-key
+resolution + `create_app`), so the CLI server path and WSGI path can't drift.
+Added `pharmacy/wsgi.py` exposing module-level `app` for
+`waitress-serve … pharmacy.wsgi:app` / `gunicorn pharmacy.wsgi:app`, and a
+`DEPLOYMENT.md` recommending (not mandating) a WSGI server plus SQLite/secret-key
+backup guidance (including verifying a restored DB with `python -m pharmacy
+check`). README points to it. Test: with in-memory DB + fixed key env,
+`pharmacy.wsgi.app` is a Flask app whose client gets 200 on `/login` (no files
+written). Full suite 57 passing (was 56). This completes "deployment hardening";
+that horizon is removed from `todo.md`.
