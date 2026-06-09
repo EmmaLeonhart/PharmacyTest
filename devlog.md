@@ -82,3 +82,19 @@ a "Change password" nav link for all logged-in users. Tests: change succeeds
 (old password stops working, new one logs in); wrong current password refused
 and password untouched; the page requires login. Full suite 44 passing
 (was 41).
+
+## 2026-06-09 — v2-4: expiry & low-stock reporting
+
+Added `reports.alerts(session, *, low_stock_threshold, today=None)` — a pure
+function returning one dict per lot needing attention, tagged with all
+applicable reasons: `expired` (expiry in the past), `expiring_soon` (within 30
+days), `low_stock` (derived on-hand at/below the threshold). Healthy lots are
+omitted; lots without an expiry date are only stock-checked. `today` is
+injectable so the date logic is deterministically testable. Added a logged-in
+`GET /alerts` route (threshold via `?threshold=` query param, default 5),
+`alerts.html`, and an "Alerts" nav link. Tests: expired/expiring/low-stock all
+flagged and a healthy lot is not; a no-expiry lot reports only `low_stock`; the
+page renders and surfaces a low-stock lot. Full suite 47 passing (was 44).
+
+This drained the v2 queue; the next work-loop tick refills it by decomposing
+the next `todo.md` horizon.

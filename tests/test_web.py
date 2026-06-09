@@ -225,3 +225,15 @@ def test_password_change_requires_login(client):
     resp = client.get("/account/password", follow_redirects=False)
     assert resp.status_code == 302
     assert "/login" in resp.headers["Location"]
+
+
+def test_alerts_page_renders(client, app):
+    _login(client)
+    # A low-stock lot should surface on the alerts page.
+    client.post("/drugs/new", data={"name": "Codeine", "unit": "tablet"})
+    client.post("/receive", data={"drug_id": "1", "lot_number": "LO",
+                                  "quantity": "1"})
+    resp = client.get("/alerts?threshold=5")
+    assert resp.status_code == 200
+    assert b"Alerts" in resp.data
+    assert b"low_stock" in resp.data

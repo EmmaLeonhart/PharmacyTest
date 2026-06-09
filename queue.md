@@ -12,10 +12,7 @@ Each item below builds on the v1 pharmacy tracker (modules in `pharmacy/`, tests
 
 ## Active — v2 work
 
-1. **Expiry & low-stock reporting.**
-   - Add `reports.alerts(session, *, low_stock_threshold)` returning lots that are expired, expiring within 30 days, or at/below the threshold on-hand. Pure function over existing models + `ledger.on_hand`; returns dicts tagged with the alert reason(s).
-   - Add a logged-in `GET /alerts` route + `alerts.html` template (grouped by reason) + nav link. Threshold configurable via query param, default a sensible constant.
-   - Tests in `tests/test_reports.py` (the report fn: expired lot flagged, expiring-soon flagged, low-stock flagged, healthy lot not flagged) and a smoke test for the route. Full suite green, commit, devlog, push.
+_(empty — the next work-loop tick refills this by decomposing the next `todo.md` horizon)_
 
 ---
 

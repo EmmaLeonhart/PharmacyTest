@@ -79,6 +79,21 @@ def audit():
     return render_template("audit.html", rows=rows)
 
 
+DEFAULT_LOW_STOCK_THRESHOLD = 5
+
+
+@bp.route("/alerts")
+@login_required
+def alerts():
+    try:
+        threshold = int(request.args.get("threshold",
+                                         DEFAULT_LOW_STOCK_THRESHOLD))
+    except ValueError:
+        threshold = DEFAULT_LOW_STOCK_THRESHOLD
+    rows = reports.alerts(g.db, low_stock_threshold=threshold)
+    return render_template("alerts.html", rows=rows, threshold=threshold)
+
+
 @bp.route("/drugs/new", methods=["GET", "POST"])
 @admin_required
 def new_drug():

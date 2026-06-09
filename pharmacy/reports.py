@@ -1,7 +1,48 @@
 """Read-only report assembly for display and printing. Returns plain dicts."""
 
+from datetime import date, timedelta
+
 from pharmacy import ledger
 from pharmacy.models import Drug, LedgerEntry, Lot, User
+
+EXPIRING_SOON_DAYS = 30
+
+
+def alerts(session, *, low_stock_threshold, today=None):
+    """Lots needing attention: expired, expiring within EXPIRING_SOON_DAYS, or
+    with derived on-hand at/below low_stock_threshold. One dict per flagged lot,
+    tagged with all applicable reasons. Lots with no flags are omitted; lots
+    with no expiry date are only checked for low stock. `today` defaults to the
+    current date (injectable for testing)."""
+    if today is None:
+        today = date.today()
+    soon_cutoff = today + timedelta(days=EXPIRING_SOON_DAYS)
+
+    rows = []
+    for lot in session.query(Lot).order_by(Lot.id):
+        reasons = []
+        if lot.expiry_date is not None:
+            if lot.expiry_date < today:
+                reasons.append("expired")
+            elif lot.expiry_date <= soon_cutoff:
+                reasons.append("expiring_soon")
+        on_hand = ledger.on_hand(session, lot.id)
+        if on_hand <= low_stock_threshold:
+            reasons.append("low_stock")
+        if not reasons:
+            continue
+        drug = session.get(Drug, lot.drug_id)
+        rows.append({
+            "lot_id": lot.id,
+            "lot_number": lot.lot_number,
+            "expiry_date": lot.expiry_date,
+            "drug_name": drug.name,
+            "strength": drug.strength,
+            "unit": drug.unit,
+            "on_hand": on_hand,
+            "reasons": reasons,
+        })
+    return rows
 
 
 def inventory_snapshot(session):

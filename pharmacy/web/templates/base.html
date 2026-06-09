@@ -15,6 +15,7 @@
         <a href="{{ url_for('main.dispose') }}">Dispose</a>
         <a href="{{ url_for('main.reconcile') }}">Reconcile</a>
         <a href="{{ url_for('main.audit') }}">Audit log</a>
+        <a href="{{ url_for('main.alerts') }}">Alerts</a>
         <a href="{{ url_for('main.verify') }}">Verify</a>
         {% if g.get('user') and g.user.role.name == 'admin' %}
         <a href="{{ url_for('main.new_drug') }}">Add drug</a>
