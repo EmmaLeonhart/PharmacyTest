@@ -1,6 +1,10 @@
 {% extends "base.html" %}
 {% block content %}
 <h1>Inventory</h1>
+<p class="no-print">
+  <a href="{{ url_for('main.print_inventory') }}">Printable inventory</a> ·
+  <a href="{{ url_for('main.print_audit') }}">Printable audit log</a>
+</p>
 <table>
   <thead><tr><th>Drug</th><th>Lot</th><th>On hand</th><th>Unit</th></tr></thead>
   <tbody>

@@ -155,6 +155,20 @@ def reconcile():
                            rows=reports.inventory_snapshot(g.db))
 
 
+@bp.route("/print/inventory")
+@login_required
+def print_inventory():
+    return render_template("print_inventory.html",
+                           rows=reports.inventory_snapshot(g.db))
+
+
+@bp.route("/print/audit")
+@login_required
+def print_audit():
+    return render_template("print_audit.html",
+                           rows=reports.audit_log(g.db))
+
+
 @bp.route("/verify")
 @login_required
 def verify():

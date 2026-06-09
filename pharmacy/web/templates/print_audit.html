@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Audit log report</h1>
+<button class="no-print" onclick="window.print()">Print</button>
+<table>
+  <thead><tr><th>#</th><th>Time</th><th>Type</th><th>Drug</th><th>Lot</th>
+    <th>Δ Qty</th><th>Operator</th><th>Witness</th><th>Reason</th><th>Ref</th></tr></thead>
+  <tbody>
+  {% for r in rows %}
+    <tr><td>{{ r.id }}</td><td>{{ r.timestamp }}</td><td>{{ r.type }}</td>
+      <td>{{ r.drug_name }}</td><td>{{ r.lot_number }}</td>
+      <td>{{ r.quantity_delta }}</td><td>{{ r.operator }}</td>
+      <td>{{ r.witness or '' }}</td><td>{{ r.reason or '' }}</td>
+      <td>{{ r.reference or '' }}</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

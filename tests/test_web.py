@@ -66,3 +66,10 @@ def test_verify_integrity_reports_ok(client):
     _login(client)
     resp = client.get("/verify")
     assert b"intact" in resp.data.lower()
+
+
+def test_printable_inventory_renders(client):
+    _login(client)
+    resp = client.get("/print/inventory")
+    assert resp.status_code == 200
+    assert b"Inventory report" in resp.data
