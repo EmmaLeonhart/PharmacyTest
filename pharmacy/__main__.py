@@ -6,9 +6,8 @@ so staff can log in and change them.
 """
 
 import os
-import secrets
 
-from pharmacy.bootstrap import ensure_admin
+from pharmacy.bootstrap import ensure_admin, load_or_create_secret_key
 from pharmacy.db import init_db, make_session
 from pharmacy.web import create_app
 
@@ -25,7 +24,11 @@ def main():
               f"password. Log in and change it.")
     session.close()
 
-    secret = os.environ.get("PHARMACY_SECRET_KEY", secrets.token_hex(16))
+    secret = os.environ.get("PHARMACY_SECRET_KEY")
+    if not secret:
+        key_file = os.environ.get("PHARMACY_SECRET_KEY_FILE",
+                                  "pharmacy_secret.key")
+        secret = load_or_create_secret_key(key_file)
     app = create_app(engine, secret_key=secret)
     host = os.environ.get("PHARMACY_HOST", "127.0.0.1")
     port = int(os.environ.get("PHARMACY_PORT", "5000"))

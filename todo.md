@@ -16,20 +16,9 @@ Everything below is v2 and beyond.
 
 ## Security & access control
 
-- **Role-based access control.** Roles (`admin`/`operator`) exist and every action is
-  attributed, but no route is admin-gated yet. Restrict catalog management and (future)
-  user management to admins; operators keep day-to-day transaction recording.
-- **User management UI.** Admins create operators/admins, deactivate accounts, and reset
-  passwords from the web UI — today only the first-run bootstrap admin exists.
-- **Self-service password change.** A logged-in user can change their own password.
-- **Deployment hardening.** Persist a stable `PHARMACY_SECRET_KEY` instead of a random
-  per-start key (random key invalidates sessions on restart); document running behind a
-  production WSGI server; guidance on `pharmacy.db` backups.
-
-## Reporting & visibility
-
-- **Expiry & low-stock reporting.** Flag lots that are expired or expiring soon, and
-  lots whose derived on-hand is at or below a configurable threshold.
+- **Deployment hardening (remaining).** The stable secret-key persistence is shipped;
+  still to do: document running behind a production WSGI server, and guidance on
+  `pharmacy.db` backups.
 
 ## Data entry & workflow
 

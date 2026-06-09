@@ -37,3 +37,7 @@ venv/
 *.sqlite3
 pharmacy.db
 instance/
+
+# Secrets
+pharmacy_secret.key
+*.key

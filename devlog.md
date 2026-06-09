@@ -127,3 +127,19 @@ suite 52 passing (was 50).
 Also corrected a bookkeeping drift flagged in the prior status report: the
 shipped "per-lot transaction history" bullet was still lingering in `todo.md`;
 removed it (and this item) so `todo.md` only holds not-yet-built horizons.
+
+## 2026-06-09 — v2-7: persist a stable Flask secret key
+
+Fixed a real deployment bug: `__main__` generated a fresh random `secret_key`
+on every start, so each restart silently invalidated all logged-in sessions.
+Added `bootstrap.load_or_create_secret_key(path)` — reads the key from a file if
+present, otherwise generates `secrets.token_hex(32)`, persists it (creating
+parent dirs), and returns it. `__main__` now uses `PHARMACY_SECRET_KEY` if set,
+else a key file at `PHARMACY_SECRET_KEY_FILE` (default `pharmacy_secret.key`,
+gitignored). Tests: the helper returns the same key on a second call (persisted,
+not regenerated) and creates nested parent dirs. Full suite 54 passing (was 52).
+
+Bookkeeping: also pruned `todo.md` of items shipped in earlier ticks but left
+behind (RBAC, user-management UI, self-service password change, expiry/low-stock
+reporting) and narrowed "deployment hardening" to its remaining parts (WSGI
+guidance, DB backups). `todo.md` now reflects only not-yet-built work.
