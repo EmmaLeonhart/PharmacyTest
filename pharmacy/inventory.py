@@ -2,7 +2,7 @@
 entries. All quantity-changing operations go through here, never by writing
 LedgerEntry rows directly."""
 
-from datetime import date, datetime, timezone
+from datetime import datetime, timezone
 
 from pharmacy import ledger
 from pharmacy.models import Count, Lot
