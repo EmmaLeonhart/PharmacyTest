@@ -182,3 +182,46 @@ def test_operator_does_not_see_users_nav_link(client, app):
     _login_as(client, "op", "oppw")
     resp = client.get("/")
     assert b'href="/users"' not in resp.data
+
+
+def test_user_can_change_own_password(client, app):
+    _add_operator(app)
+    _login_as(client, "op", "oppw")
+    resp = client.post("/account/password",
+                       data={"current_password": "oppw",
+                             "new_password": "changed-pw"},
+                       follow_redirects=True)
+    assert resp.status_code == 200
+    fresh = app.test_client()
+    old = fresh.post("/login", data={"username": "op", "password": "oppw"},
+                     follow_redirects=True)
+    assert b"Invalid" in old.data
+    new = fresh.post("/login", data={"username": "op", "password": "changed-pw"},
+                     follow_redirects=True)
+    assert b"Inventory" in new.data
+
+
+def test_password_change_refused_with_wrong_current(client, app):
+    _add_operator(app)
+    _login_as(client, "op", "oppw")
+    resp = client.post("/account/password",
+                       data={"current_password": "WRONG",
+                             "new_password": "changed-pw"},
+                       follow_redirects=True)
+    assert resp.status_code == 200
+    assert b"current password is incorrect" in resp.data.lower()
+    # Password unchanged: original still works, attempted new one does not.
+    fresh = app.test_client()
+    assert b"Inventory" in fresh.post(
+        "/login", data={"username": "op", "password": "oppw"},
+        follow_redirects=True).data
+    fresh2 = app.test_client()
+    assert b"Invalid" in fresh2.post(
+        "/login", data={"username": "op", "password": "changed-pw"},
+        follow_redirects=True).data
+
+
+def test_password_change_requires_login(client):
+    resp = client.get("/account/password", follow_redirects=False)
+    assert resp.status_code == 302
+    assert "/login" in resp.headers["Location"]

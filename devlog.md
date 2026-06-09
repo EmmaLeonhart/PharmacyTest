@@ -70,3 +70,15 @@ Added `users.html` and an admin-only "Users" nav link. Tests: admin creates an
 operator who can then log in; operator gets 403 on `/users` and doesn't see the
 nav link; last-active-admin deactivation refused; deactivate/reset-password
 work. Full suite 41 passing (was 34).
+
+## 2026-06-09 — v2-3: self-service password change
+
+Any logged-in user can now change their own password at `GET/POST
+/account/password` — they must supply their current password (re-checked via
+`auth.authenticate`) before the new one is set via `auth.set_password`. Wrong
+current password is refused with a clear flash and the credential is left
+unchanged; an empty new password is rejected. Added `account_password.html` and
+a "Change password" nav link for all logged-in users. Tests: change succeeds
+(old password stops working, new one logs in); wrong current password refused
+and password untouched; the page requires login. Full suite 44 passing
+(was 41).

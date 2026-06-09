@@ -160,6 +160,27 @@ def reset_password(user_id):
     return redirect(url_for("main.users"))
 
 
+@bp.route("/account/password", methods=["GET", "POST"])
+@login_required
+def change_password():
+    if request.method == "POST":
+        try:
+            current = request.form["current_password"]
+            new = request.form["new_password"]
+        except KeyError as exc:
+            flash(_form_error(exc), "error")
+            return render_template("account_password.html")
+        if auth.authenticate(g.db, g.user.username, current) is None:
+            flash("Your current password is incorrect.", "error")
+        elif not new:
+            flash("New password must not be empty.", "error")
+        else:
+            auth.set_password(g.db, g.user, new)
+            flash("Password changed.", "ok")
+            return redirect(url_for("main.dashboard"))
+    return render_template("account_password.html")
+
+
 @bp.route("/receive", methods=["GET", "POST"])
 @login_required
 def receive():

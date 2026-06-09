@@ -12,12 +12,7 @@ Each item below builds on the v1 pharmacy tracker (modules in `pharmacy/`, tests
 
 ## Active — v2 work
 
-1. **Self-service password change.**
-   - Add `GET/POST /account/password` (any logged-in user): require current password (re-authenticate via `auth.authenticate`), set new password via the existing `auth.set_password` helper. Flash on success/failure.
-   - Template `account_password.html`; nav link "Change password".
-   - Tests: correct current password changes it (old fails, new works on next login); wrong current password is refused. Full suite green, commit, devlog, push.
-
-2. **Expiry & low-stock reporting.**
+1. **Expiry & low-stock reporting.**
    - Add `reports.alerts(session, *, low_stock_threshold)` returning lots that are expired, expiring within 30 days, or at/below the threshold on-hand. Pure function over existing models + `ledger.on_hand`; returns dicts tagged with the alert reason(s).
    - Add a logged-in `GET /alerts` route + `alerts.html` template (grouped by reason) + nav link. Threshold configurable via query param, default a sensible constant.
    - Tests in `tests/test_reports.py` (the report fn: expired lot flagged, expiring-soon flagged, low-stock flagged, healthy lot not flagged) and a smoke test for the route. Full suite green, commit, devlog, push.
