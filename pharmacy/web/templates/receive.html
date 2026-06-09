@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Receive stock</h1>
+<form method="post">
+  <label>Drug
+    <select name="drug_id" required>
+      {% for d in drugs %}<option value="{{ d.id }}">{{ d.name }} {{ d.strength }}</option>{% endfor %}
+    </select>
+  </label>
+  <label>Lot number <input name="lot_number" required></label>
+  <label>Quantity <input name="quantity" type="number" step="0.001" required></label>
+  <label>Reference (PO) <input name="reference"></label>
+  <button type="submit">Receive</button>
+</form>
+{% endblock %}

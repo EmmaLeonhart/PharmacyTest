@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Reconcile / count</h1>
+<form method="post">
+  <label>Lot
+    <select name="lot_id" required>
+      {% for r in rows %}<option value="{{ r.lot_id }}">{{ r.drug_name }} — lot {{ r.lot_number }} (expected {{ r.on_hand }} {{ r.unit }})</option>{% endfor %}
+    </select>
+  </label>
+  <label>Counted quantity <input name="counted_qty" type="number" step="0.001" required></label>
+  <label><input type="checkbox" name="post_adjustment"> Post adjustment to correct on-hand</label>
+  <label>Reason (if adjusting) <input name="reason"></label>
+  <button type="submit">Record count</button>
+</form>
+{% endblock %}

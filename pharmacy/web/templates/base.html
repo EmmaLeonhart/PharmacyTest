@@ -10,7 +10,13 @@
     {% if session.get('user_id') %}
       <nav>
         <a href="{{ url_for('main.dashboard') }}">Inventory</a>
+        <a href="{{ url_for('main.receive') }}">Receive</a>
+        <a href="{{ url_for('main.dispense') }}">Dispense</a>
+        <a href="{{ url_for('main.dispose') }}">Dispose</a>
+        <a href="{{ url_for('main.reconcile') }}">Reconcile</a>
         <a href="{{ url_for('main.audit') }}">Audit log</a>
+        <a href="{{ url_for('main.verify') }}">Verify</a>
+        <a href="{{ url_for('main.new_drug') }}">Add drug</a>
         <a href="{{ url_for('main.logout') }}">Log out</a>
       </nav>
     {% endif %}

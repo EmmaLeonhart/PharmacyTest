@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Ledger integrity</h1>
+{% if ok %}
+  <p class="ok">The audit chain is <strong>intact</strong>. No tampering detected.</p>
+{% else %}
+  <p class="error">Integrity <strong>FAILED</strong> at entry #{{ bad_id }}.
+     History may have been altered.</p>
+{% endif %}
+{% endblock %}

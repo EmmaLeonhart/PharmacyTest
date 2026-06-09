@@ -6,8 +6,8 @@ from flask import (
     Blueprint, flash, g, redirect, render_template, request, session, url_for,
 )
 
-from pharmacy import auth, reports
-from pharmacy.models import User
+from pharmacy import auth, inventory, ledger, reports
+from pharmacy.models import Drug, EntryType, Role, User
 
 bp = Blueprint("main", __name__)
 
@@ -53,3 +53,110 @@ def dashboard():
 def audit():
     rows = reports.audit_log(g.db)
     return render_template("audit.html", rows=rows)
+
+
+@bp.route("/drugs/new", methods=["GET", "POST"])
+@login_required
+def new_drug():
+    if request.method == "POST":
+        drug = Drug(
+            name=request.form["name"],
+            strength=request.form.get("strength"),
+            form=request.form.get("form"),
+            code=request.form.get("code"),
+            schedule=request.form.get("schedule"),
+            unit=request.form.get("unit") or "unit",
+        )
+        g.db.add(drug)
+        g.db.flush()
+        flash(f"Added {drug.name}.", "ok")
+        return redirect(url_for("main.dashboard"))
+    return render_template("new_drug.html")
+
+
+@bp.route("/receive", methods=["GET", "POST"])
+@login_required
+def receive():
+    if request.method == "POST":
+        try:
+            inventory.receive(
+                g.db, user_id=g.user.id,
+                drug_id=int(request.form["drug_id"]),
+                lot_number=request.form["lot_number"],
+                quantity=float(request.form["quantity"]),
+                reference=request.form.get("reference") or None,
+            )
+            flash("Stock received.", "ok")
+            return redirect(url_for("main.dashboard"))
+        except (inventory.BusinessError, ValueError) as exc:
+            flash(str(exc), "error")
+    drugs = g.db.query(Drug).order_by(Drug.name).all()
+    return render_template("receive.html", drugs=drugs)
+
+
+@bp.route("/dispense", methods=["GET", "POST"])
+@login_required
+def dispense():
+    if request.method == "POST":
+        try:
+            inventory.dispense(
+                g.db, user_id=g.user.id,
+                lot_id=int(request.form["lot_id"]),
+                quantity=float(request.form["quantity"]),
+                reference=request.form.get("reference") or None,
+            )
+            flash("Dispensed.", "ok")
+            return redirect(url_for("main.dashboard"))
+        except (inventory.BusinessError, ValueError) as exc:
+            flash(str(exc), "error")
+    return render_template("dispense.html", rows=reports.inventory_snapshot(g.db))
+
+
+@bp.route("/dispose", methods=["GET", "POST"])
+@login_required
+def dispose():
+    if request.method == "POST":
+        try:
+            inventory.dispose(
+                g.db, user_id=g.user.id,
+                lot_id=int(request.form["lot_id"]),
+                quantity=float(request.form["quantity"]),
+                witness_user_id=int(request.form["witness_user_id"]),
+                reason=request.form.get("reason", ""),
+            )
+            flash("Disposal recorded.", "ok")
+            return redirect(url_for("main.dashboard"))
+        except (inventory.BusinessError, ValueError) as exc:
+            flash(str(exc), "error")
+    witnesses = g.db.query(User).filter(User.id != g.user.id,
+                                        User.active.is_(True)).all()
+    return render_template("dispose.html",
+                           rows=reports.inventory_snapshot(g.db),
+                           witnesses=witnesses)
+
+
+@bp.route("/reconcile", methods=["GET", "POST"])
+@login_required
+def reconcile():
+    if request.method == "POST":
+        try:
+            inventory.reconcile(
+                g.db, user_id=g.user.id,
+                lot_id=int(request.form["lot_id"]),
+                counted_qty=float(request.form["counted_qty"]),
+                post_adjustment="post_adjustment" in request.form,
+                reason=request.form.get("reason", ""),
+            )
+            flash("Count recorded.", "ok")
+            return redirect(url_for("main.dashboard"))
+        except (inventory.BusinessError, ValueError) as exc:
+            flash(str(exc), "error")
+    return render_template("reconcile.html",
+                           rows=reports.inventory_snapshot(g.db))
+
+
+@bp.route("/verify")
+@login_required
+def verify():
+    ok, bad_id = ledger.verify_chain(g.db)
+    return render_template("verify.html", ok=ok, bad_id=bad_id)
