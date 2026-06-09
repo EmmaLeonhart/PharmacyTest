@@ -18,11 +18,23 @@ def norm_qty(value):
     return Decimal(str(value)).quantize(QTY_SCALE)
 
 
+def norm_ts(timestamp):
+    """Normalize a timestamp to a stable naive-UTC isoformat so hashing is
+    stable across the SQLite DateTime round-trip, which drops tzinfo.
+
+    An aware timestamp is converted to UTC and stripped of tzinfo; a naive
+    timestamp (as read back from the DB, where it was stored as UTC) is taken
+    as-is. Both paths yield the same canonical string for the same instant."""
+    if timestamp.tzinfo is not None:
+        timestamp = timestamp.astimezone(timezone.utc).replace(tzinfo=None)
+    return timestamp.isoformat()
+
+
 def canonical(*, timestamp, user_id, lot_id, type_value, quantity_delta,
               reason, witness_user_id, reference):
     """Build the canonical string that gets hashed for an entry."""
     parts = [
-        timestamp.isoformat(),
+        norm_ts(timestamp),
         str(user_id),
         str(lot_id),
         type_value,
@@ -86,3 +98,23 @@ def on_hand(session, lot_id):
         .scalar()
     )
     return norm_qty(total)
+
+
+def verify_chain(session):
+    """Re-walk the whole ledger in insertion order. Return (ok, first_bad_id).
+    ok is False at the first entry whose stored hashes do not match a
+    recomputation, which catches any edit or deletion of history."""
+    prev_hash = GENESIS_HASH
+    for entry in session.query(LedgerEntry).order_by(LedgerEntry.id.asc()):
+        payload = canonical(
+            timestamp=entry.timestamp, user_id=entry.user_id,
+            lot_id=entry.lot_id, type_value=entry.type.value,
+            quantity_delta=norm_qty(entry.quantity_delta),
+            reason=entry.reason, witness_user_id=entry.witness_user_id,
+            reference=entry.reference,
+        )
+        expected = compute_hash(prev_hash, payload)
+        if entry.prev_hash != prev_hash or entry.entry_hash != expected:
+            return (False, entry.id)
+        prev_hash = entry.entry_hash
+    return (True, None)
