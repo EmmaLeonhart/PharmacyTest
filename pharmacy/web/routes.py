@@ -98,6 +98,68 @@ def new_drug():
     return render_template("new_drug.html")
 
 
+def _active_admin_count(db):
+    return (db.query(User)
+            .filter(User.role == Role.admin, User.active.is_(True))
+            .count())
+
+
+@bp.route("/users")
+@admin_required
+def users():
+    rows = g.db.query(User).order_by(User.username).all()
+    return render_template("users.html", users=rows)
+
+
+@bp.route("/users/new", methods=["POST"])
+@admin_required
+def new_user():
+    try:
+        role = Role.admin if request.form.get("role") == "admin" else Role.operator
+        auth.create_user(
+            g.db,
+            username=request.form["username"],
+            display_name=request.form["display_name"],
+            password=request.form["password"],
+            role=role,
+        )
+        flash("User created.", "ok")
+    except (auth.AuthError, KeyError) as exc:
+        flash(_form_error(exc), "error")
+    return redirect(url_for("main.users"))
+
+
+@bp.route("/users/<int:user_id>/deactivate", methods=["POST"])
+@admin_required
+def deactivate_user(user_id):
+    user = g.db.get(User, user_id)
+    if user is None:
+        flash("No such user.", "error")
+    elif (user.role is Role.admin and user.active
+          and _active_admin_count(g.db) <= 1):
+        flash("Cannot deactivate the last active admin.", "error")
+    else:
+        user.active = False
+        g.db.flush()
+        flash(f"Deactivated {user.username}.", "ok")
+    return redirect(url_for("main.users"))
+
+
+@bp.route("/users/<int:user_id>/reset-password", methods=["POST"])
+@admin_required
+def reset_password(user_id):
+    user = g.db.get(User, user_id)
+    if user is None:
+        flash("No such user.", "error")
+    else:
+        try:
+            auth.set_password(g.db, user, request.form["password"])
+            flash(f"Password reset for {user.username}.", "ok")
+        except KeyError as exc:
+            flash(_form_error(exc), "error")
+    return redirect(url_for("main.users"))
+
+
 @bp.route("/receive", methods=["GET", "POST"])
 @login_required
 def receive():

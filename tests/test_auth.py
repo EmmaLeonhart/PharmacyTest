@@ -38,3 +38,11 @@ def test_duplicate_username_rejected(session):
     with pytest.raises(auth.AuthError):
         auth.create_user(session, username="bob", display_name="Bob2",
                          password="y")
+
+
+def test_set_password_changes_credential(session):
+    u = auth.create_user(session, username="bob", display_name="Bob",
+                         password="old-pw")
+    auth.set_password(session, u, "new-pw")
+    assert auth.authenticate(session, "bob", "old-pw") is None
+    assert auth.authenticate(session, "bob", "new-pw") is not None

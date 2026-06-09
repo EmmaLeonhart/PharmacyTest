@@ -12,17 +12,12 @@ Each item below builds on the v1 pharmacy tracker (modules in `pharmacy/`, tests
 
 ## Active — v2 work
 
-1. **Admin user-management page (step 2 of access control).**
-   - Add admin-only routes: `GET /users` (list users with username, display name, role, active), `POST /users/new` (create an operator or admin via `auth.create_user`, catching `AuthError` → flash), `POST /users/<id>/deactivate` (set `active=False`; never deactivate the last active admin — enforce and test), `POST /users/<id>/reset-password` (set a new password via a helper in `auth.py`, e.g. `set_password(session, user, new_password)`).
-   - Templates: `users.html` (table + create form). Add a nav link visible only to admins.
-   - Tests: admin can create an operator who can then log in; operator cannot reach `/users`; deactivating the last active admin is refused. Full suite green, commit, devlog, push.
-
-2. **Self-service password change.**
-   - Add `GET/POST /account/password` (any logged-in user): require current password (re-authenticate via `auth.authenticate`), set new password via the `auth.set_password` helper from item 1. Flash on success/failure.
+1. **Self-service password change.**
+   - Add `GET/POST /account/password` (any logged-in user): require current password (re-authenticate via `auth.authenticate`), set new password via the existing `auth.set_password` helper. Flash on success/failure.
    - Template `account_password.html`; nav link "Change password".
    - Tests: correct current password changes it (old fails, new works on next login); wrong current password is refused. Full suite green, commit, devlog, push.
 
-3. **Expiry & low-stock reporting.**
+2. **Expiry & low-stock reporting.**
    - Add `reports.alerts(session, *, low_stock_threshold)` returning lots that are expired, expiring within 30 days, or at/below the threshold on-hand. Pure function over existing models + `ledger.on_hand`; returns dicts tagged with the alert reason(s).
    - Add a logged-in `GET /alerts` route + `alerts.html` template (grouped by reason) + nav link. Threshold configurable via query param, default a sensible constant.
    - Tests in `tests/test_reports.py` (the report fn: expired lot flagged, expiring-soon flagged, low-stock flagged, healthy lot not flagged) and a smoke test for the route. Full suite green, commit, devlog, push.

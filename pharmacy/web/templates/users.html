@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Users</h1>
+<table>
+  <thead><tr><th>Username</th><th>Name</th><th>Role</th><th>Active</th>
+    <th>Actions</th></tr></thead>
+  <tbody>
+  {% for u in users %}
+    <tr>
+      <td>{{ u.username }}</td>
+      <td>{{ u.display_name }}</td>
+      <td>{{ u.role.value }}</td>
+      <td>{{ 'yes' if u.active else 'no' }}</td>
+      <td>
+        {% if u.active %}
+        <form method="post" action="{{ url_for('main.deactivate_user', user_id=u.id) }}" style="display:inline">
+          <button type="submit">Deactivate</button>
+        </form>
+        {% endif %}
+        <form method="post" action="{{ url_for('main.reset_password', user_id=u.id) }}" style="display:inline">
+          <input name="password" type="password" placeholder="new password" required>
+          <button type="submit">Reset password</button>
+        </form>
+      </td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+
+<h2>Add user</h2>
+<form method="post" action="{{ url_for('main.new_user') }}">
+  <label>Username <input name="username" required></label>
+  <label>Display name <input name="display_name" required></label>
+  <label>Password <input name="password" type="password" required></label>
+  <label>Role
+    <select name="role">
+      <option value="operator">operator</option>
+      <option value="admin">admin</option>
+    </select>
+  </label>
+  <button type="submit">Create user</button>
+</form>
+{% endblock %}

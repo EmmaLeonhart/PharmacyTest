@@ -2,7 +2,7 @@ import pytest
 
 from pharmacy import auth
 from pharmacy.db import init_db, make_session
-from pharmacy.models import Drug, Role
+from pharmacy.models import Drug, Role, User
 from pharmacy.web import create_app
 
 
@@ -113,3 +113,72 @@ def test_admin_can_add_drug(client, app):
     assert resp.status_code == 200
     session = make_session(app.config["ENGINE"])
     assert session.query(Drug).filter_by(name="Morphine").count() == 1
+
+
+def _user_id(app, username):
+    session = make_session(app.config["ENGINE"])
+    return session.query(User).filter_by(username=username).one().id
+
+
+def test_admin_can_create_operator_who_can_log_in(client, app):
+    _login(client)  # admin
+    resp = client.post("/users/new",
+                       data={"username": "nurse", "display_name": "Nurse",
+                             "password": "np", "role": "operator"},
+                       follow_redirects=True)
+    assert resp.status_code == 200
+    # The new operator can authenticate.
+    fresh = app.test_client()
+    login = fresh.post("/login", data={"username": "nurse", "password": "np"},
+                       follow_redirects=True)
+    assert login.status_code == 200
+    assert b"Inventory" in login.data
+
+
+def test_operator_cannot_reach_users(client, app):
+    _add_operator(app)
+    _login_as(client, "op", "oppw")
+    resp = client.get("/users")
+    assert resp.status_code == 403
+
+
+def test_cannot_deactivate_last_active_admin(client, app):
+    _login(client)  # admin (the only one)
+    admin_id = _user_id(app, "admin")
+    resp = client.post(f"/users/{admin_id}/deactivate", follow_redirects=True)
+    assert resp.status_code == 200
+    assert b"last active admin" in resp.data.lower()
+    # Admin remains active.
+    session = make_session(app.config["ENGINE"])
+    assert session.query(User).filter_by(username="admin").one().active is True
+
+
+def test_admin_can_deactivate_operator(client, app):
+    _add_operator(app)
+    _login(client)  # admin
+    op_id = _user_id(app, "op")
+    client.post(f"/users/{op_id}/deactivate", follow_redirects=True)
+    session = make_session(app.config["ENGINE"])
+    assert session.query(User).filter_by(username="op").one().active is False
+
+
+def test_admin_can_reset_operator_password(client, app):
+    _add_operator(app)
+    _login(client)  # admin
+    op_id = _user_id(app, "op")
+    client.post(f"/users/{op_id}/reset-password",
+                data={"password": "brand-new"}, follow_redirects=True)
+    fresh = app.test_client()
+    old = fresh.post("/login", data={"username": "op", "password": "oppw"},
+                     follow_redirects=True)
+    assert b"Invalid" in old.data
+    new = fresh.post("/login", data={"username": "op", "password": "brand-new"},
+                     follow_redirects=True)
+    assert b"Inventory" in new.data
+
+
+def test_operator_does_not_see_users_nav_link(client, app):
+    _add_operator(app)
+    _login_as(client, "op", "oppw")
+    resp = client.get("/")
+    assert b'href="/users"' not in resp.data

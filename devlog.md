@@ -57,3 +57,16 @@ decorator in `pharmacy/web/routes.py` (logged-in non-admins get an explicit 403
 hidden from operators. Tests: an operator POSTing to `/drugs/new` is refused
 (403, no drug created); an admin still succeeds. Full suite 34 passing
 (was 32). First autonomous work-loop item.
+
+## 2026-06-09 — v2-2: admin user-management page (RBAC step 2)
+
+Admins can now manage users from the web UI instead of only the first-run
+bootstrap admin. Added `auth.set_password(session, user, new_password)` and
+admin-only routes: `GET /users` (list), `POST /users/new` (create
+operator/admin, `AuthError` → flash), `POST /users/<id>/deactivate`, and
+`POST /users/<id>/reset-password`. Safety rail: deactivating the **last active
+admin** is refused (would otherwise lock everyone out of admin functions).
+Added `users.html` and an admin-only "Users" nav link. Tests: admin creates an
+operator who can then log in; operator gets 403 on `/users` and doesn't see the
+nav link; last-active-admin deactivation refused; deactivate/reset-password
+work. Full suite 41 passing (was 34).

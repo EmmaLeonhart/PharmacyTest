@@ -26,6 +26,13 @@ def create_user(session, *, username, display_name, password,
     return user
 
 
+def set_password(session, user, new_password):
+    """Replace a user's password. Returns the user."""
+    user.password_hash = generate_password_hash(new_password)
+    session.flush()
+    return user
+
+
 def authenticate(session, username, password):
     """Return the User on success, else None."""
     user = session.query(User).filter_by(username=username).one_or_none()
