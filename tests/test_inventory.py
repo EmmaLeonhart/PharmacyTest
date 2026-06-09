@@ -43,3 +43,34 @@ def test_dispense_cannot_go_negative(session, actors, drug, ts):
         inventory.dispense(session, user_id=op.id, lot_id=r.lot_id,
                            quantity=6, timestamp=ts)
     assert ledger.on_hand(session, r.lot_id) == Decimal("5.000")
+
+
+def test_dispose_requires_witness_and_reason(session, actors, drug, ts):
+    op, wit = actors
+    r = inventory.receive(session, user_id=op.id, drug_id=drug.id,
+                          lot_number="L1", quantity=10, timestamp=ts)
+
+    with pytest.raises(inventory.BusinessError):
+        inventory.dispose(session, user_id=op.id, lot_id=r.lot_id,
+                          quantity=2, witness_user_id=None,
+                          reason="expired", timestamp=ts)
+    with pytest.raises(inventory.BusinessError):
+        inventory.dispose(session, user_id=op.id, lot_id=r.lot_id,
+                          quantity=2, witness_user_id=wit.id,
+                          reason="", timestamp=ts)
+
+    entry = inventory.dispose(session, user_id=op.id, lot_id=r.lot_id,
+                              quantity=2, witness_user_id=wit.id,
+                              reason="broken vial", timestamp=ts)
+    assert entry.witness_user_id == wit.id
+    assert ledger.on_hand(session, r.lot_id) == Decimal("8.000")
+
+
+def test_dispose_witness_must_differ_from_operator(session, actors, drug, ts):
+    op, _ = actors
+    r = inventory.receive(session, user_id=op.id, drug_id=drug.id,
+                          lot_number="L1", quantity=10, timestamp=ts)
+    with pytest.raises(inventory.BusinessError):
+        inventory.dispose(session, user_id=op.id, lot_id=r.lot_id,
+                          quantity=2, witness_user_id=op.id,
+                          reason="expired", timestamp=ts)

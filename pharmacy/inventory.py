@@ -52,3 +52,26 @@ def dispense(session, *, user_id, lot_id, quantity, reference=None,
         quantity_delta=-ledger.norm_qty(quantity), reason=reason,
         reference=reference, timestamp=timestamp,
     )
+
+
+def dispose(session, *, user_id, lot_id, quantity, witness_user_id,
+            reason, timestamp=None):
+    """Record destruction/wastage. Requires a distinct witness and a reason."""
+    if quantity <= 0:
+        raise BusinessError("Disposed quantity must be positive.")
+    if witness_user_id is None:
+        raise BusinessError("Disposal requires a witness.")
+    if witness_user_id == user_id:
+        raise BusinessError("Witness must be a different user than the operator.")
+    if not (reason or "").strip():
+        raise BusinessError("Disposal requires a reason.")
+    available = ledger.on_hand(session, lot_id)
+    if ledger.norm_qty(quantity) > available:
+        raise BusinessError(
+            f"Cannot dispose {quantity}; only {available} on hand."
+        )
+    return ledger.append_entry(
+        session, user_id=user_id, lot_id=lot_id, type="dispose",
+        quantity_delta=-ledger.norm_qty(quantity), reason=reason,
+        witness_user_id=witness_user_id, timestamp=timestamp,
+    )
