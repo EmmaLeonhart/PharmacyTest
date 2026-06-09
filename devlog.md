@@ -143,3 +143,16 @@ Bookkeeping: also pruned `todo.md` of items shipped in earlier ticks but left
 behind (RBAC, user-management UI, self-service password change, expiry/low-stock
 reporting) and narrowed "deployment hardening" to its remaining parts (WSGI
 guidance, DB backups). `todo.md` now reflects only not-yet-built work.
+
+## 2026-06-09 — v2-8: integrity-check CLI (`python -m pharmacy check`)
+
+Shipped the decision-free slice of "scheduled integrity checks": a one-shot
+`python -m pharmacy check` that runs `ledger.verify_chain` and exits 0 (intact)
+or 1 (tampering detected, naming the first bad entry). `main()` dispatches on a
+`check` first arg; no-arg `python -m pharmacy` still launches the server. This
+gives operators a check primitive to schedule via their own cron / Task
+Scheduler; an in-app schedule and any notification channel on a non-zero exit
+remain deliberately deferred as product decisions (narrowed the `todo.md` bullet
+to say so). README documents the command. Tests (`tests/test_cli.py`): against a
+temp sqlite **file** DB, `check()` returns 0 on an intact chain and 1 after a
+past entry is mutated directly. Full suite 56 passing (was 54).

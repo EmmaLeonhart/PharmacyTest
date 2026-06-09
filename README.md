@@ -31,6 +31,18 @@ audit chain, and the **Printable** links to print inventory and audit reports.
 
 Configuration via environment variables: `PHARMACY_DB` (default
 `sqlite:///pharmacy.db`), `PHARMACY_HOST`, `PHARMACY_PORT`,
-`PHARMACY_SECRET_KEY`.
+`PHARMACY_SECRET_KEY` (persisted to `PHARMACY_SECRET_KEY_FILE`, default
+`pharmacy_secret.key`, if not set so sessions survive restarts).
+
+### Integrity check
+
+```
+python -m pharmacy check
+```
+
+Runs a one-shot audit-chain integrity check and exits `0` if the chain is
+intact or `1` if tampering is detected (printing the first bad entry). Schedule
+it with your own cron / Task Scheduler to get a regular tamper check; wiring up
+a notification channel on a non-zero exit is left to the operator.
 
 Run the tests with `pytest`.

@@ -29,5 +29,7 @@ Everything below is v2 and beyond.
 
 ## Integrity assurance
 
-- **Scheduled integrity checks + tamper alerting.** Periodically run `verify_chain` and
-  surface/notify on any detected break, rather than only on-demand via the Verify page.
+- **Scheduled integrity checks + tamper alerting (remaining).** The check primitive
+  ships as `python -m pharmacy check` (exit 0/1) for operators to schedule via their own
+  cron. Still **decision-gated**: an in-app/automatic schedule and a notification channel
+  on a detected break (email? log? in-app banner?) — needs a product decision.
