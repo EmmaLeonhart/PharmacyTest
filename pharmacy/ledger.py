@@ -37,3 +37,52 @@ def canonical(*, timestamp, user_id, lot_id, type_value, quantity_delta,
 def compute_hash(prev_hash, payload):
     """SHA-256 of the previous hash concatenated with the payload."""
     return hashlib.sha256((prev_hash + payload).encode("utf-8")).hexdigest()
+
+
+def last_entry(session):
+    """Most recently inserted entry, or None."""
+    return (
+        session.query(LedgerEntry)
+        .order_by(LedgerEntry.id.desc())
+        .first()
+    )
+
+
+def append_entry(session, *, user_id, lot_id, type, quantity_delta,
+                 reason=None, witness_user_id=None, reference=None,
+                 timestamp=None):
+    """Create and persist a hash-chained ledger entry. Returns the entry."""
+    if timestamp is None:
+        timestamp = datetime.now(timezone.utc)
+    type_value = type.value if isinstance(type, EntryType) else type
+    qty = norm_qty(quantity_delta)
+
+    prev = last_entry(session)
+    prev_hash = prev.entry_hash if prev else GENESIS_HASH
+
+    payload = canonical(
+        timestamp=timestamp, user_id=user_id, lot_id=lot_id,
+        type_value=type_value, quantity_delta=qty,
+        reason=reason, witness_user_id=witness_user_id, reference=reference,
+    )
+    entry_hash = compute_hash(prev_hash, payload)
+
+    entry = LedgerEntry(
+        timestamp=timestamp, user_id=user_id, lot_id=lot_id,
+        type=EntryType(type_value), quantity_delta=qty,
+        reason=reason, witness_user_id=witness_user_id, reference=reference,
+        prev_hash=prev_hash, entry_hash=entry_hash,
+    )
+    session.add(entry)
+    session.flush()
+    return entry
+
+
+def on_hand(session, lot_id):
+    """Derived on-hand quantity for a lot = sum of its quantity deltas."""
+    total = (
+        session.query(func.coalesce(func.sum(LedgerEntry.quantity_delta), 0))
+        .filter(LedgerEntry.lot_id == lot_id)
+        .scalar()
+    )
+    return norm_qty(total)
