@@ -1,7 +1,7 @@
 """Read-only report assembly for display and printing. Returns plain dicts."""
 
 from pharmacy import ledger
-from pharmacy.models import Drug, EntryType, LedgerEntry, Lot, User
+from pharmacy.models import Drug, LedgerEntry, Lot, User
 
 
 def inventory_snapshot(session):

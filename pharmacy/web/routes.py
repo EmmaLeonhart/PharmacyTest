@@ -7,9 +7,18 @@ from flask import (
 )
 
 from pharmacy import auth, inventory, ledger, reports
-from pharmacy.models import Drug, EntryType, Role, User
+from pharmacy.models import Drug, User
 
 bp = Blueprint("main", __name__)
+
+
+def _form_error(exc):
+    """Turn an operation exception into a user-facing flash message. A KeyError
+    from a missing form field stringifies to just the bare key name, so name it
+    explicitly; other errors already carry a readable message."""
+    if isinstance(exc, KeyError):
+        return f"Missing required field: {exc.args[0]}."
+    return str(exc)
 
 
 def login_required(view):
@@ -88,8 +97,8 @@ def receive():
             )
             flash("Stock received.", "ok")
             return redirect(url_for("main.dashboard"))
-        except (inventory.BusinessError, ValueError) as exc:
-            flash(str(exc), "error")
+        except (inventory.BusinessError, ValueError, KeyError) as exc:
+            flash(_form_error(exc), "error")
     drugs = g.db.query(Drug).order_by(Drug.name).all()
     return render_template("receive.html", drugs=drugs)
 
@@ -107,8 +116,8 @@ def dispense():
             )
             flash("Dispensed.", "ok")
             return redirect(url_for("main.dashboard"))
-        except (inventory.BusinessError, ValueError) as exc:
-            flash(str(exc), "error")
+        except (inventory.BusinessError, ValueError, KeyError) as exc:
+            flash(_form_error(exc), "error")
     return render_template("dispense.html", rows=reports.inventory_snapshot(g.db))
 
 
@@ -126,8 +135,8 @@ def dispose():
             )
             flash("Disposal recorded.", "ok")
             return redirect(url_for("main.dashboard"))
-        except (inventory.BusinessError, ValueError) as exc:
-            flash(str(exc), "error")
+        except (inventory.BusinessError, ValueError, KeyError) as exc:
+            flash(_form_error(exc), "error")
     witnesses = g.db.query(User).filter(User.id != g.user.id,
                                         User.active.is_(True)).all()
     return render_template("dispose.html",
@@ -149,8 +158,8 @@ def reconcile():
             )
             flash("Count recorded.", "ok")
             return redirect(url_for("main.dashboard"))
-        except (inventory.BusinessError, ValueError) as exc:
-            flash(str(exc), "error")
+        except (inventory.BusinessError, ValueError, KeyError) as exc:
+            flash(_form_error(exc), "error")
     return render_template("reconcile.html",
                            rows=reports.inventory_snapshot(g.db))
 

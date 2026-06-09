@@ -73,3 +73,11 @@ def test_printable_inventory_renders(client):
     resp = client.get("/print/inventory")
     assert resp.status_code == 200
     assert b"Inventory report" in resp.data
+
+
+def test_malformed_post_flashes_instead_of_500(client):
+    _login(client)
+    # POST to /receive missing every required field -> should flash, not 500.
+    resp = client.post("/receive", data={}, follow_redirects=True)
+    assert resp.status_code == 200
+    assert b"Missing required field" in resp.data
