@@ -7,7 +7,7 @@ from flask import (
 )
 
 from pharmacy import auth, inventory, ledger, reports
-from pharmacy.models import Drug, User
+from pharmacy.models import Drug, Role, User
 
 bp = Blueprint("main", __name__)
 
@@ -27,6 +27,21 @@ def login_required(view):
         if "user_id" not in session:
             return redirect(url_for("main.login"))
         g.user = g.db.get(User, session["user_id"])
+        return view(*args, **kwargs)
+    return wrapped
+
+
+def admin_required(view):
+    """Like login_required, but additionally requires the admin role. A
+    logged-in non-admin gets a 403 page rather than a redirect, so the refusal
+    is explicit rather than looking like a missing login."""
+    @wraps(view)
+    def wrapped(*args, **kwargs):
+        if "user_id" not in session:
+            return redirect(url_for("main.login"))
+        g.user = g.db.get(User, session["user_id"])
+        if g.user is None or g.user.role is not Role.admin:
+            return render_template("forbidden.html"), 403
         return view(*args, **kwargs)
     return wrapped
 
@@ -65,7 +80,7 @@ def audit():
 
 
 @bp.route("/drugs/new", methods=["GET", "POST"])
-@login_required
+@admin_required
 def new_drug():
     if request.method == "POST":
         drug = Drug(

@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Not authorized</h1>
+<p class="error">You do not have permission to access this page. This action
+requires an administrator account.</p>
+<p><a href="{{ url_for('main.dashboard') }}">Back to inventory</a></p>
+{% endblock %}

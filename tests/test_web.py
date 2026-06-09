@@ -2,7 +2,7 @@ import pytest
 
 from pharmacy import auth
 from pharmacy.db import init_db, make_session
-from pharmacy.models import Role
+from pharmacy.models import Drug, Role
 from pharmacy.web import create_app
 
 
@@ -81,3 +81,35 @@ def test_malformed_post_flashes_instead_of_500(client):
     resp = client.post("/receive", data={}, follow_redirects=True)
     assert resp.status_code == 200
     assert b"Missing required field" in resp.data
+
+
+def _add_operator(app, username="op", password="oppw"):
+    """Create an operator against the app's engine."""
+    session = make_session(app.config["ENGINE"])
+    auth.create_user(session, username=username, display_name="Operator",
+                     password=password, role=Role.operator)
+    session.commit()
+
+
+def _login_as(client, username, password):
+    client.post("/login", data={"username": username, "password": password})
+
+
+def test_operator_cannot_add_drug(client, app):
+    _add_operator(app)
+    _login_as(client, "op", "oppw")
+    resp = client.post("/drugs/new", data={"name": "Morphine", "unit": "vial"})
+    assert resp.status_code == 403
+    # The drug must not have been created.
+    session = make_session(app.config["ENGINE"])
+    assert session.query(Drug).count() == 0
+
+
+def test_admin_can_add_drug(client, app):
+    _login(client)  # admin
+    resp = client.post("/drugs/new",
+                       data={"name": "Morphine", "unit": "vial"},
+                       follow_redirects=True)
+    assert resp.status_code == 200
+    session = make_session(app.config["ENGINE"])
+    assert session.query(Drug).filter_by(name="Morphine").count() == 1

@@ -46,3 +46,14 @@ pharmacy controlled-substances tracker with a regulatory-grade audit trail.
   column drops `tzinfo`, which would have made `verify_chain` flag every
   legitimate ledger as tampered — fixed with a `norm_ts` UTC-normalizer
   mirroring the existing `norm_qty` Decimal normalizer. No test was weakened.
+
+## 2026-06-09 — v2-1: admin-gate catalog management (RBAC step 1)
+
+Closed the access-control gap the v1 final review flagged: roles existed and
+actions were attributed, but no route was admin-gated. Added an `admin_required`
+decorator in `pharmacy/web/routes.py` (logged-in non-admins get an explicit 403
+`forbidden.html` page rather than a login redirect) and applied it to
+`/drugs/new` — catalog management is now admin-only. The "Add drug" nav link is
+hidden from operators. Tests: an operator POSTing to `/drugs/new` is refused
+(403, no drug created); an admin still succeeds. Full suite 34 passing
+(was 32). First autonomous work-loop item.
