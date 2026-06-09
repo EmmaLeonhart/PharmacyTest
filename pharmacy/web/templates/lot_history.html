@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Lot history — {{ hist.drug_name }} {{ hist.strength }} (lot {{ hist.lot_number }})</h1>
+<p class="no-print">
+  {% if hist.expiry_date %}Expiry: {{ hist.expiry_date }} · {% endif %}
+  Unit: {{ hist.unit }} ·
+  <a href="{{ url_for('main.dashboard') }}">Back to inventory</a>
+</p>
+<table>
+  <thead><tr><th>#</th><th>Time</th><th>Type</th><th>Δ Qty</th>
+    <th>On hand after</th><th>Operator</th><th>Witness</th>
+    <th>Reason</th><th>Ref</th></tr></thead>
+  <tbody>
+  {% for e in hist.entries %}
+    <tr>
+      <td>{{ e.id }}</td><td>{{ e.timestamp }}</td><td>{{ e.type }}</td>
+      <td>{{ e.quantity_delta }}</td><td>{{ e.running_balance }}</td>
+      <td>{{ e.operator }}</td><td>{{ e.witness or '' }}</td>
+      <td>{{ e.reason or '' }}</td><td>{{ e.reference or '' }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

@@ -98,3 +98,16 @@ page renders and surfaces a low-stock lot. Full suite 47 passing (was 44).
 
 This drained the v2 queue; the next work-loop tick refills it by decomposing
 the next `todo.md` horizon.
+
+## 2026-06-09 — v2-5: per-lot transaction history (promoted from todo.md)
+
+First post-v2-batch refill: promoted "per-lot transaction history" from
+`todo.md`, decomposed it into `queue.md`, and built it. Added
+`reports.lot_history(session, lot_id)` — the lot/drug header plus its full
+chronological ledger, each entry annotated with the **running on-hand** after
+it (cumulative sum of deltas); the final running balance equals
+`ledger.on_hand`. Added a logged-in `GET /lots/<id>` route (unknown lot →
+flash + redirect), `lot_history.html`, and made each dashboard lot number a
+link to its history. Tests: running balance is correct, ordered, and ends at
+on-hand; page renders with the post-dispense balance; unknown lot redirects.
+Full suite 50 passing (was 47).

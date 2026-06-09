@@ -11,7 +11,7 @@
   {% for r in rows %}
     <tr>
       <td>{{ r.drug_name }} {{ r.strength }}</td>
-      <td>{{ r.lot_number }}</td>
+      <td><a href="{{ url_for('main.lot_history', lot_id=r.lot_id) }}">{{ r.lot_number }}</a></td>
       <td>{{ r.on_hand }}</td>
       <td>{{ r.unit }}</td>
     </tr>

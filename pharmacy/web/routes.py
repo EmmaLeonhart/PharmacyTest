@@ -7,7 +7,7 @@ from flask import (
 )
 
 from pharmacy import auth, inventory, ledger, reports
-from pharmacy.models import Drug, Role, User
+from pharmacy.models import Drug, Lot, Role, User
 
 bp = Blueprint("main", __name__)
 
@@ -289,6 +289,16 @@ def print_inventory():
 def print_audit():
     return render_template("print_audit.html",
                            rows=reports.audit_log(g.db))
+
+
+@bp.route("/lots/<int:lot_id>")
+@login_required
+def lot_history(lot_id):
+    if g.db.get(Lot, lot_id) is None:
+        flash("No such lot.", "error")
+        return redirect(url_for("main.dashboard"))
+    return render_template("lot_history.html",
+                           hist=reports.lot_history(g.db, lot_id))
 
 
 @bp.route("/verify")

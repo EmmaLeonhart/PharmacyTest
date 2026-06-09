@@ -237,3 +237,23 @@ def test_alerts_page_renders(client, app):
     assert resp.status_code == 200
     assert b"Alerts" in resp.data
     assert b"low_stock" in resp.data
+
+
+def test_lot_history_page_renders(client, app):
+    _login(client)
+    client.post("/drugs/new", data={"name": "Morphine", "unit": "vial"})
+    client.post("/receive", data={"drug_id": "1", "lot_number": "L1",
+                                  "quantity": "10"})
+    client.post("/dispense", data={"lot_id": "1", "quantity": "4"})
+    resp = client.get("/lots/1")
+    assert resp.status_code == 200
+    assert b"Lot history" in resp.data
+    # Running balance after the dispense should show.
+    assert b"6.000" in resp.data
+
+
+def test_lot_history_unknown_lot_redirects(client):
+    _login(client)
+    resp = client.get("/lots/999", follow_redirects=True)
+    assert resp.status_code == 200
+    assert b"No such lot" in resp.data

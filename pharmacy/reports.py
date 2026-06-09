@@ -45,6 +45,43 @@ def alerts(session, *, low_stock_threshold, today=None):
     return rows
 
 
+def lot_history(session, lot_id):
+    """Full chronological ledger for one lot, each entry annotated with the
+    running on-hand after it. Returns a header dict plus an `entries` list; the
+    last entry's running_balance equals the lot's derived on-hand."""
+    lot = session.get(Lot, lot_id)
+    drug = session.get(Drug, lot.drug_id)
+    entries = []
+    running = ledger.norm_qty(0)
+    query = (session.query(LedgerEntry)
+             .filter(LedgerEntry.lot_id == lot_id)
+             .order_by(LedgerEntry.id.asc()))
+    for e in query:
+        running = ledger.norm_qty(running + e.quantity_delta)
+        operator = session.get(User, e.user_id)
+        witness = session.get(User, e.witness_user_id) if e.witness_user_id else None
+        entries.append({
+            "id": e.id,
+            "timestamp": e.timestamp,
+            "type": e.type.value,
+            "quantity_delta": e.quantity_delta,
+            "running_balance": running,
+            "operator": operator.display_name,
+            "witness": witness.display_name if witness else None,
+            "reason": e.reason,
+            "reference": e.reference,
+        })
+    return {
+        "lot_id": lot.id,
+        "lot_number": lot.lot_number,
+        "expiry_date": lot.expiry_date,
+        "drug_name": drug.name,
+        "strength": drug.strength,
+        "unit": drug.unit,
+        "entries": entries,
+    }
+
+
 def inventory_snapshot(session):
     """One row per lot with current derived on-hand."""
     rows = []

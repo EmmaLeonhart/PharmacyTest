@@ -73,3 +73,26 @@ def test_alerts_lot_with_no_expiry_only_checks_stock(session, actors, drug, ts):
                           today=date(2026, 6, 9))
     by_lot = {r["lot_number"]: r for r in rows}
     assert by_lot["NOEXP"]["reasons"] == ["low_stock"]
+
+
+def test_lot_history_running_balance(session, actors, drug, ts):
+    op, wit = actors
+    r = inventory.receive(session, user_id=op.id, drug_id=drug.id,
+                          lot_number="L1", quantity=10, timestamp=ts)
+    inventory.dispense(session, user_id=op.id, lot_id=r.lot_id,
+                       quantity=3, timestamp=ts)
+    inventory.dispose(session, user_id=op.id, lot_id=r.lot_id,
+                      quantity=2, witness_user_id=wit.id,
+                      reason="broken", timestamp=ts)
+
+    hist = reports.lot_history(session, r.lot_id)
+    assert hist["lot_number"] == "L1"
+    assert hist["drug_name"] == "Oxycodone"
+    # Entries chronological with running on-hand after each.
+    balances = [e["running_balance"] for e in hist["entries"]]
+    assert balances == [Decimal("10.000"), Decimal("7.000"), Decimal("5.000")]
+    types = [e["type"] for e in hist["entries"]]
+    assert types == ["receive", "dispense", "dispose"]
+    # Final running balance equals derived on-hand.
+    assert hist["entries"][-1]["running_balance"] == \
+        reports.inventory_snapshot(session)[0]["on_hand"]
