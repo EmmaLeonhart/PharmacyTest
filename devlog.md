@@ -111,3 +111,19 @@ flash + redirect), `lot_history.html`, and made each dashboard lot number a
 link to its history. Tests: running balance is correct, ordered, and ends at
 on-hand; page renders with the post-dispense balance; unknown lot redirects.
 Full suite 50 passing (was 47).
+
+## 2026-06-09 — v2-6: date-range audit filtering + CSV export
+
+Made the audit log usable for record-keeping and regulators. The `/audit` page
+now takes `start`/`end` date filters (parsed `YYYY-MM-DD`, end treated as
+end-of-day, invalid dates ignored) wired to the existing
+`reports.audit_log(start=, end=)`. Added `GET /audit.csv` that streams the same
+filtered log as `text/csv` with a `Content-Disposition: attachment` header and a
+header row, plus a "Download CSV" link on the audit page. Tests: the page
+accepts date params (and shrugs off an invalid one); the CSV endpoint returns
+`text/csv`, an attachment disposition, a header row, and one row per entry. Full
+suite 52 passing (was 50).
+
+Also corrected a bookkeeping drift flagged in the prior status report: the
+shipped "per-lot transaction history" bullet was still lingering in `todo.md`;
+removed it (and this item) so `todo.md` only holds not-yet-built horizons.

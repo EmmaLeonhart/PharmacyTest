@@ -257,3 +257,32 @@ def test_lot_history_unknown_lot_redirects(client):
     resp = client.get("/lots/999", follow_redirects=True)
     assert resp.status_code == 200
     assert b"No such lot" in resp.data
+
+
+def test_audit_page_accepts_date_filters(client, app):
+    _login(client)
+    client.post("/drugs/new", data={"name": "Morphine", "unit": "vial"})
+    client.post("/receive", data={"drug_id": "1", "lot_number": "L1",
+                                  "quantity": "10"})
+    resp = client.get("/audit?start=2026-01-01&end=2026-12-31")
+    assert resp.status_code == 200
+    # An invalid date must not error out.
+    assert client.get("/audit?start=not-a-date").status_code == 200
+
+
+def test_audit_csv_export(client, app):
+    _login(client)
+    client.post("/drugs/new", data={"name": "Morphine", "unit": "vial"})
+    client.post("/receive", data={"drug_id": "1", "lot_number": "L1",
+                                  "quantity": "10"})
+    client.post("/dispense", data={"lot_id": "1", "quantity": "4"})
+    resp = client.get("/audit.csv")
+    assert resp.status_code == 200
+    assert resp.mimetype == "text/csv"
+    assert "attachment" in resp.headers.get("Content-Disposition", "")
+    body = resp.get_data(as_text=True)
+    lines = [ln for ln in body.splitlines() if ln.strip()]
+    # Header row + one row per ledger entry (receive + dispense).
+    assert lines[0].lower().startswith("id,")
+    assert len(lines) == 3
+    assert "receive" in body and "dispense" in body

@@ -1,6 +1,12 @@
 {% extends "base.html" %}
 {% block content %}
 <h1>Audit log</h1>
+<form method="get" class="no-print">
+  <label>From <input name="start" type="date" value="{{ start }}"></label>
+  <label>To <input name="end" type="date" value="{{ end }}"></label>
+  <button type="submit">Filter</button>
+  <a href="{{ url_for('main.audit_csv', start=start, end=end) }}">Download CSV</a>
+</form>
 <table>
   <thead><tr><th>#</th><th>Time</th><th>Type</th><th>Drug</th><th>Lot</th>
     <th>Δ Qty</th><th>Operator</th><th>Witness</th><th>Reason</th></tr></thead>

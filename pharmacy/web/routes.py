@@ -1,15 +1,45 @@
 """HTTP routes."""
 
+import csv
+import io
+from datetime import datetime, time
 from functools import wraps
 
 from flask import (
-    Blueprint, flash, g, redirect, render_template, request, session, url_for,
+    Blueprint, Response, flash, g, redirect, render_template, request,
+    session, url_for,
 )
 
 from pharmacy import auth, inventory, ledger, reports
-from pharmacy.models import Drug, Lot, Role, User
+from pharmacy.models import Drug, EntryType, Lot, Role, User
 
 bp = Blueprint("main", __name__)
+
+
+def _audit_filter_kwargs():
+    """Build reports.audit_log() kwargs from the request's query params.
+    Invalid dates / types are ignored (treated as no filter)."""
+    kwargs = {}
+    start = request.args.get("start")
+    end = request.args.get("end")
+    type_ = request.args.get("type")
+    if start:
+        try:
+            kwargs["start"] = datetime.strptime(start, "%Y-%m-%d")
+        except ValueError:
+            pass
+    if end:
+        try:
+            day = datetime.strptime(end, "%Y-%m-%d")
+            kwargs["end"] = datetime.combine(day.date(), time.max)
+        except ValueError:
+            pass
+    if type_:
+        try:
+            kwargs["entry_type"] = EntryType(type_)
+        except ValueError:
+            pass
+    return kwargs
 
 
 def _form_error(exc):
@@ -72,11 +102,38 @@ def dashboard():
     return render_template("dashboard.html", rows=rows)
 
 
+_AUDIT_CSV_HEADER = ["id", "timestamp", "type", "drug", "lot",
+                     "quantity_delta", "operator", "witness", "reason",
+                     "reference", "entry_hash"]
+
+
 @bp.route("/audit")
 @login_required
 def audit():
-    rows = reports.audit_log(g.db)
-    return render_template("audit.html", rows=rows)
+    rows = reports.audit_log(g.db, **_audit_filter_kwargs())
+    return render_template("audit.html", rows=rows,
+                           start=request.args.get("start", ""),
+                           end=request.args.get("end", ""))
+
+
+@bp.route("/audit.csv")
+@login_required
+def audit_csv():
+    rows = reports.audit_log(g.db, **_audit_filter_kwargs())
+    out = io.StringIO()
+    writer = csv.writer(out)
+    writer.writerow(_AUDIT_CSV_HEADER)
+    for r in rows:
+        writer.writerow([
+            r["id"], r["timestamp"], r["type"], r["drug_name"],
+            r["lot_number"], r["quantity_delta"], r["operator"],
+            r["witness"] or "", r["reason"] or "", r["reference"] or "",
+            r["entry_hash"],
+        ])
+    return Response(
+        out.getvalue(), mimetype="text/csv",
+        headers={"Content-Disposition": "attachment; filename=audit_log.csv"},
+    )
 
 
 DEFAULT_LOW_STOCK_THRESHOLD = 5

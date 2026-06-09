@@ -30,10 +30,6 @@ Everything below is v2 and beyond.
 
 - **Expiry & low-stock reporting.** Flag lots that are expired or expiring soon, and
   lots whose derived on-hand is at or below a configurable threshold.
-- **Date-range filtered audit reports + CSV export.** The audit log already filters in
-  code; expose date-range filters in the UI and add a CSV export for regulators/records.
-- **Per-lot transaction history.** A drill-down view showing the full chronological
-  ledger for a single lot, with its running on-hand.
 
 ## Data entry & workflow
 
