@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Inventory report</h1>
+<button class="no-print" onclick="window.print()">Print</button>
+<table>
+  <thead><tr><th>Drug</th><th>Schedule</th><th>Lot</th><th>Expiry</th>
+    <th>On hand</th><th>Unit</th></tr></thead>
+  <tbody>
+  {% for r in rows %}
+    <tr><td>{{ r.drug_name }} {{ r.strength }}</td><td>{{ r.schedule or '' }}</td>
+      <td>{{ r.lot_number }}</td><td>{{ r.expiry_date or '' }}</td>
+      <td>{{ r.on_hand }}</td><td>{{ r.unit }}</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

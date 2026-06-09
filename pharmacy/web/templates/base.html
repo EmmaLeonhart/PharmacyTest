@@ -1,0 +1,31 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>{% block title %}Pharmacy Tracker{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='print.css') }}">
+</head>
+<body>
+  <header class="no-print">
+    {% if session.get('user_id') %}
+      <nav>
+        <a href="{{ url_for('main.dashboard') }}">Inventory</a>
+        <a href="{{ url_for('main.receive') }}">Receive</a>
+        <a href="{{ url_for('main.dispense') }}">Dispense</a>
+        <a href="{{ url_for('main.dispose') }}">Dispose</a>
+        <a href="{{ url_for('main.reconcile') }}">Reconcile</a>
+        <a href="{{ url_for('main.audit') }}">Audit log</a>
+        <a href="{{ url_for('main.verify') }}">Verify</a>
+        <a href="{{ url_for('main.new_drug') }}">Add drug</a>
+        <a href="{{ url_for('main.logout') }}">Log out</a>
+      </nav>
+    {% endif %}
+  </header>
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+      <p class="flash {{ category }}">{{ message }}</p>
+    {% endfor %}
+  {% endwith %}
+  <main>{% block content %}{% endblock %}</main>
+</body>
+</html>

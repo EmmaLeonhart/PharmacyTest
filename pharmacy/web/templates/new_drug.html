@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Add drug</h1>
+<form method="post">
+  <label>Name <input name="name" required></label>
+  <label>Strength <input name="strength"></label>
+  <label>Form <input name="form"></label>
+  <label>Code/NDC <input name="code"></label>
+  <label>Schedule <input name="schedule" placeholder="CII"></label>
+  <label>Unit <input name="unit" value="unit"></label>
+  <button type="submit">Save</button>
+</form>
+{% endblock %}

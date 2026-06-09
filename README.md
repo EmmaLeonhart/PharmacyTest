@@ -18,10 +18,19 @@ Tampering with history is mathematically detectable. Records and reports are pri
 
 ## Getting Started
 
-This project was initialized with `cleanvibe new` and is intended to be developed
-with AI-assisted coding via Claude Code.
+```
+pip install -r requirements.txt
+python -m pharmacy
+```
 
-```
-cd JamiesProjevt
-claude
-```
+Then open <http://127.0.0.1:5000>. On first run an admin account is created
+(`admin` / `admin` by default — override with `PHARMACY_ADMIN_USER` /
+`PHARMACY_ADMIN_PASSWORD`). Log in and add drugs, then record
+receive / dispense / dispose / reconcile actions. Use **Verify** to check the
+audit chain, and the **Printable** links to print inventory and audit reports.
+
+Configuration via environment variables: `PHARMACY_DB` (default
+`sqlite:///pharmacy.db`), `PHARMACY_HOST`, `PHARMACY_PORT`,
+`PHARMACY_SECRET_KEY`.
+
+Run the tests with `pytest`.
